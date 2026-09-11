@@ -32,6 +32,10 @@ export interface ChatCompletionsTarget {
    *  more headroom than a plain chat model (see kimi.ts, where the
    *  reasoning trace is billed against the same budget as the answer). */
   maxOutputTokens?: number
+  /** Extra top-level body fields for provider-specific knobs (Kimi's
+   *  `thinking` / `reasoning_effort`). Spread FIRST so it can never
+   *  clobber model, messages or the token ceiling. */
+  extraBody?: Record<string, unknown>
 }
 
 /**
@@ -54,6 +58,7 @@ export async function generateChatCompletions(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        ...(target.extraBody ?? {}),
         model,
         messages: [
           { role: 'system', content: systemPrompt },

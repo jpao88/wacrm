@@ -38,6 +38,26 @@ function kimiMaxOutputTokens(): number {
     : DEFAULT_KIMI_MAX_OUTPUT_TOKENS
 }
 
+// Reasoning is what makes a support reply take 30s+ and burn thousands of
+// tokens. Which knob turns it down depends on the model, and passing the
+// wrong one is an error rather than a no-op, so this stays opt-in via
+// `KIMI_THINKING` and sends nothing when unset:
+//
+//   disabled          -> {"thinking":{"type":"disabled"}}   k2.6 only
+//   low | high | max  -> {"reasoning_effort":"<value>"}      k3 only
+//
+// k2.7-code always reasons and rejects both. For a WhatsApp agent the
+// answer is normally kimi-k2.6 with KIMI_THINKING=disabled.
+function kimiThinkingBody(): Record<string, unknown> | undefined {
+  const mode = process.env.KIMI_THINKING?.trim().toLowerCase()
+  if (!mode) return undefined
+  if (mode === 'disabled') return { thinking: { type: 'disabled' } }
+  if (mode === 'low' || mode === 'high' || mode === 'max') {
+    return { reasoning_effort: mode }
+  }
+  return undefined
+}
+
 /** Kimi's API is OpenAI-compatible apart from the max-tokens param. */
 export async function generateKimi(args: ProviderArgs): Promise<ProviderResult> {
   return generateChatCompletions(args, {
@@ -45,5 +65,6 @@ export async function generateKimi(args: ProviderArgs): Promise<ProviderResult> 
     label: 'Kimi',
     maxTokensParam: 'max_tokens',
     maxOutputTokens: kimiMaxOutputTokens(),
+    extraBody: kimiThinkingBody(),
   })
 }
