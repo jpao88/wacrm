@@ -21,9 +21,12 @@ and polish.
   offers Kimi alongside OpenAI and Anthropic, so an account can spend
   credits on a Moonshot key. Kimi's API is OpenAI-shaped, so drafts,
   auto-reply, the Playground and usage logging all work unchanged.
-  Defaults to the global platform (`api.moonshot.ai`); set
+  Defaults to the global platform (console at `platform.kimi.ai`, API at
+  `api.moonshot.ai`) on `kimi-k3`; set
   `KIMI_BASE_URL=https://api.moonshot.cn/v1` if your key came from the
-  mainland-China platform, whose keys are not interchangeable.
+  mainland-China platform, whose keys are not interchangeable. Model ids
+  differ between the two platforms — `GET /v1/models` lists what a key
+  can reach.
 
 ## [0.8.1] — 2026-07-10
 

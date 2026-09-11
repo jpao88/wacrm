@@ -142,7 +142,7 @@ describe('generateReply — Kimi', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const res = await generateReply({
-      config: config({ provider: 'kimi', model: 'kimi-latest', apiKey: 'sk-kimi' }),
+      config: config({ provider: 'kimi', model: 'kimi-k3', apiKey: 'sk-kimi' }),
       systemPrompt: 'sys',
       messages: [{ role: 'user', content: 'Hi' }],
     })
