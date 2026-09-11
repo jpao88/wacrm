@@ -14,9 +14,28 @@ import type { ProviderArgs } from './shared'
 // given key can actually reach.
 const DEFAULT_KIMI_BASE_URL = 'https://api.moonshot.ai/v1'
 
+// Every current Kimi model reasons before answering (k3 and k2.7-code
+// always, k2.6 by default), and the reasoning is returned in a separate
+// `reasoning_content` field that is billed against the SAME max_tokens
+// budget as the answer. Under the shared 1024-token ceiling the model
+// spends the whole budget thinking, `content` comes back empty, and the
+// adapter reports "Kimi returned an empty response" — which looks like a
+// provider fault but is really a truncation. Moonshot's own guidance is
+// >= 16000 so both fields fit. Note this is a CEILING, not a spend: short
+// answers still cost what they cost. `KIMI_MAX_OUTPUT_TOKENS` lowers it
+// for anyone who disables thinking and wants tighter, cheaper replies.
+const DEFAULT_KIMI_MAX_OUTPUT_TOKENS = 16000
+
 function kimiUrl(): string {
   const base = process.env.KIMI_BASE_URL?.trim() || DEFAULT_KIMI_BASE_URL
   return `${base.replace(/\/+$/, '')}/chat/completions`
+}
+
+function kimiMaxOutputTokens(): number {
+  const raw = Number(process.env.KIMI_MAX_OUTPUT_TOKENS)
+  return Number.isFinite(raw) && raw > 0
+    ? Math.floor(raw)
+    : DEFAULT_KIMI_MAX_OUTPUT_TOKENS
 }
 
 /** Kimi's API is OpenAI-compatible apart from the max-tokens param. */
@@ -25,5 +44,6 @@ export async function generateKimi(args: ProviderArgs): Promise<ProviderResult> 
     url: kimiUrl(),
     label: 'Kimi',
     maxTokensParam: 'max_tokens',
+    maxOutputTokens: kimiMaxOutputTokens(),
   })
 }

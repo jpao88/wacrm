@@ -27,6 +27,11 @@ export interface ChatCompletionsTarget {
   /** OpenAI renamed this to `max_completion_tokens`; the compatible
    *  clones (Moonshot/Kimi) still only accept `max_tokens`. */
   maxTokensParam: 'max_completion_tokens' | 'max_tokens'
+  /** Per-target output ceiling. Defaults to the shared
+   *  `MAX_OUTPUT_TOKENS`; a target overrides it when the provider needs
+   *  more headroom than a plain chat model (see kimi.ts, where the
+   *  reasoning trace is billed against the same budget as the answer). */
+  maxOutputTokens?: number
 }
 
 /**
@@ -54,7 +59,7 @@ export async function generateChatCompletions(
           { role: 'system', content: systemPrompt },
           ...mergeConsecutive(messages),
         ],
-        [target.maxTokensParam]: MAX_OUTPUT_TOKENS,
+        [target.maxTokensParam]: target.maxOutputTokens ?? MAX_OUTPUT_TOKENS,
       }),
       signal: AbortSignal.timeout(timeoutMs),
     })
