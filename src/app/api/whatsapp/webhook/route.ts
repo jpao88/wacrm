@@ -91,6 +91,16 @@ interface WhatsAppWebhookEntry {
         status: string
         timestamp: string
         recipient_id: string
+        // Present only on `status: 'failed'`. Meta puts the real reason
+        // here (code + title + error_data.details); without it a failed
+        // send is indistinguishable from any other, which is exactly
+        // how an undeliverable message becomes impossible to diagnose.
+        errors?: Array<{
+          code: number
+          title: string
+          message?: string
+          error_data?: { details?: string }
+        }>
       }>
     }
     field: string
@@ -249,6 +259,20 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
       // Handle status updates
       if (value.statuses) {
         for (const status of value.statuses) {
+          // Meta only explains a delivery failure here, in the status
+          // webhook — the send call itself already returned 200 + a
+          // wamid. Log it: `handleStatusUpdate` persists just the
+          // status string, so without this the reason is lost.
+          if (status.status === 'failed') {
+            console.error(
+              '[webhook] message failed:',
+              JSON.stringify({
+                message_id: status.id,
+                recipient_id: status.recipient_id,
+                errors: status.errors ?? null,
+              }),
+            )
+          }
           await handleStatusUpdate(status)
         }
       }
