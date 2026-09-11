@@ -36,6 +36,11 @@ yarn-error.log*
 !.env.local.example
 !.env.example
 
+# scratch files where credentials get pasted while wiring up Meta/Supabase
+tokens.txt
+secrets.txt
+*.secrets
+
 # vercel
 .vercel
 
