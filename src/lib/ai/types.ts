@@ -3,10 +3,17 @@
 //
 // One small provider-agnostic surface so the inbox draft route and the
 // inbound auto-reply bot both talk to `generateReply` without caring
-// whether the account is on OpenAI or Anthropic.
+// which provider the account is on.
 // ============================================================
 
-export type AiProvider = 'openai' | 'anthropic'
+export type AiProvider = 'openai' | 'anthropic' | 'kimi'
+
+export const AI_PROVIDERS: readonly AiProvider[] = ['openai', 'anthropic', 'kimi']
+
+/** Narrow untrusted request input to a supported provider. */
+export function isAiProvider(value: unknown): value is AiProvider {
+  return typeof value === 'string' && (AI_PROVIDERS as readonly string[]).includes(value)
+}
 
 /**
  * Account AI setup, decrypted and ready to use. Produced by
@@ -38,7 +45,7 @@ export interface ChatMessage {
 }
 
 /**
- * Token counts for one provider call, normalized across OpenAI
+ * Token counts for one provider call, normalized across OpenAI-shaped
  * (`prompt`/`completion`) and Anthropic (`input`/`output`). Null when
  * the provider didn't return usage. Logged to `ai_usage_log`.
  */

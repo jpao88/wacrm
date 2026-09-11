@@ -36,7 +36,10 @@ function errResponse(status: number, json: unknown): Response {
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn())
 })
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+})
 
 describe('parseGeneration', () => {
   it('returns text with no handoff', () => {
@@ -125,6 +128,48 @@ describe('generateReply — OpenAI', () => {
         messages: [{ role: 'user', content: 'Hi' }],
       }),
     ).rejects.toBeInstanceOf(AiError)
+  })
+})
+
+describe('generateReply — Kimi', () => {
+  it('calls Moonshot with max_tokens rather than max_completion_tokens', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        choices: [{ message: { content: '你好!' } }],
+        usage: { prompt_tokens: 12, completion_tokens: 3, total_tokens: 15 },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'kimi', model: 'kimi-latest', apiKey: 'sk-kimi' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Hi' }],
+    })
+
+    expect(res.text).toBe('你好!')
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://api.moonshot.ai/v1/chat/completions')
+    expect(opts.headers.Authorization).toBe('Bearer sk-kimi')
+    const body = JSON.parse(opts.body)
+    expect(body.max_tokens).toBeGreaterThan(0)
+    expect(body.max_completion_tokens).toBeUndefined()
+  })
+
+  it('honours KIMI_BASE_URL for the mainland-China host', async () => {
+    vi.stubEnv('KIMI_BASE_URL', 'https://api.moonshot.cn/v1/')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(okResponse({ choices: [{ message: { content: 'ok' } }] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await generateReply({
+      config: config({ provider: 'kimi' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Hi' }],
+    })
+
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.moonshot.cn/v1/chat/completions')
   })
 })
 

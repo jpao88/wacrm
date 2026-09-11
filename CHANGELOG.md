@@ -9,6 +9,22 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [Unreleased]
+
+> **Migration required:** apply `supabase/migrations/040_ai_provider_kimi.sql`
+> (widens the `provider` CHECK constraints on `ai_configs` and
+> `ai_usage_log`; without it, saving a Kimi config is rejected).
+
+### Added
+
+- **Kimi (Moonshot AI) as an AI provider.** Settings → Agent setup now
+  offers Kimi alongside OpenAI and Anthropic, so an account can spend
+  credits on a Moonshot key. Kimi's API is OpenAI-shaped, so drafts,
+  auto-reply, the Playground and usage logging all work unchanged.
+  Defaults to the global platform (`api.moonshot.ai`); set
+  `KIMI_BASE_URL=https://api.moonshot.cn/v1` if your key came from the
+  mainland-China platform, whose keys are not interchangeable.
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same
