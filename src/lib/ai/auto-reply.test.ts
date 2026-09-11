@@ -187,7 +187,7 @@ describe('dispatchInboundToAiReply — eligibility gates', () => {
 })
 
 describe('dispatchInboundToAiReply — handoff', () => {
-  it('disables auto-reply, writes a summary, and does not send on handoff', async () => {
+  it('disables auto-reply, writes a summary, and sends nothing when the model wrote no sign-off', async () => {
     h.generateReply.mockResolvedValue({ text: '', handoff: true })
     await dispatchInboundToAiReply(ARGS)
     expect(h.engineSendText).not.toHaveBeenCalled()
@@ -208,5 +208,26 @@ describe('dispatchInboundToAiReply — handoff', () => {
       ai_autoreply_disabled: true,
       assigned_agent_id: 'agent-7',
     })
+  })
+
+  it('sends the sign-off the model wrote alongside the sentinel', async () => {
+    h.generateReply.mockResolvedValue({
+      text: 'Te paso con una persona del equipo.',
+      handoff: true,
+    })
+    await dispatchInboundToAiReply(ARGS)
+    expect(h.engineSendText).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Te paso con una persona del equipo.' }),
+    )
+    // Still pauses the bot, and without burning a reply slot.
+    expect(h.state.updatePayload).toMatchObject({ ai_autoreply_disabled: true })
+    expect(h.state.rpcCalls).toHaveLength(0)
+  })
+
+  it('pauses the bot even when the sign-off fails to send', async () => {
+    h.generateReply.mockResolvedValue({ text: 'Te paso con alguien.', handoff: true })
+    h.engineSendText.mockRejectedValue(new Error('Meta 500'))
+    await dispatchInboundToAiReply(ARGS)
+    expect(h.state.updatePayload).toMatchObject({ ai_autoreply_disabled: true })
   })
 })

@@ -97,7 +97,7 @@ export function buildSystemPrompt(args: {
 
   if (mode === 'auto_reply') {
     parts.push(
-      `You are replying automatically with no human in the loop. If you cannot confidently and safely help — the customer explicitly asks for a human, is upset or complaining, or the request needs information you do not have — reply with exactly ${HANDOFF_SENTINEL} and nothing else. A human agent will then take over. Prefer handing off over guessing.`,
+      `You are replying automatically with no human in the loop. If you cannot confidently and safely help — the customer explicitly asks for a human, is upset or complaining, or the request needs information you do not have — write one short sentence letting the customer know a person from the team will take it from here, then end the message with ${HANDOFF_SENTINEL}. Do not attempt an answer in that sentence, do not ask a follow-up question, and never promise a specific response time. A human agent will then take over. Prefer handing off over guessing.`,
     )
   }
 

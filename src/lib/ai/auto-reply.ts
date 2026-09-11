@@ -154,6 +154,24 @@ export async function dispatchInboundToAiReply(
         update.assigned_agent_id = config.handoffAgentId
       }
       await db.from('conversations').update(update).eq('id', conversationId)
+
+      // The model is asked to sign off in one line before the sentinel, so
+      // the customer learns a person is coming instead of meeting silence.
+      // Sent AFTER the pause above, never before: if the send throws, the
+      // bot is already disabled and the thread assigned, whereas the
+      // reverse order would leave it replying. No reply slot is claimed —
+      // this is the last message the bot sends on the thread, and a cap
+      // that swallowed the sign-off would recreate the silence.
+      if (handoff && text) {
+        await engineSendText({
+          accountId,
+          userId: configOwnerUserId,
+          conversationId,
+          contactId,
+          text,
+          aiGenerated: true,
+        })
+      }
       return
     }
 
